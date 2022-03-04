@@ -154,8 +154,7 @@ def validate_step(image_data, target, num_class=80):
     return giou_loss.numpy(), conf_loss.numpy(), prob_loss.numpy(), total_loss.numpy()
 
 
-def main() :
-
+def main():
     best_val_loss = 1000 # should be large at start
     save_directory = os.path.join(CHECKPOINTS_FOLDER, MODEL_NAME)
 
@@ -196,7 +195,7 @@ def main() :
         if SAVE_CHECKPOINT and not SAVE_BEST_ONLY:
             save_directory = os.path.join(CHECKPOINTS_FOLDER, MODEL_NAME+"_val_loss_{:7.2f}".format(total_val/count))
             yolo.save_weights(save_directory)
-        if SAVE_BEST_ONLY :
+        if SAVE_BEST_ONLY:
             if(best_val_loss>total_val/count):
                 yolo.save_weights(save_directory)
                 best_val_loss = total_val/count

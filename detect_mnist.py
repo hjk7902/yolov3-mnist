@@ -11,8 +11,8 @@ from yolov3 import Create_YOLOv3
     
 NUM_CLASS = 10 
 
-def detect_image(model, image_path, output_path, class_label_path, input_size=416, show=False,
-                 score_threshold=0.3, iou_threshold=0.45, rectangle_colors=''):
+
+def detect_image(model, image_path, output_path, class_label_path, input_size=416, show=False, score_threshold=0.3, iou_threshold=0.45, rectangle_colors=''):
     original_image = cv2.imread(image_path)
     class_names = read_class_names(class_label_path)
 
@@ -43,7 +43,6 @@ if __name__=="__main__":
     yolo = Create_YOLOv3(num_class=NUM_CLASS)
     yolo.load_weights("checkpoints/mnist_custom")
     weight = yolo.get_weights()
-
 
     yolo.set_weights(weight)
     result_image = detect_image(model=yolo, 

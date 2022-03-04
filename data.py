@@ -7,12 +7,6 @@ from config import *
 from image_process import *
 from bbox_iou import *
 
-YOLO_STRIDES = [8, 16, 32]
-YOLO_ANCHORS = [[[10, 13], [16, 30], [33, 23]],                [[30, 61], [62, 45], [59, 119]],        [[116, 90], [156, 198], [373, 326]]]
-
-STRIDES = np.array(YOLO_STRIDES)
-ANCHORS = (np.array(YOLO_ANCHORS).T / STRIDES).T
-
 
 # 파일에서 클래스 라벨을 읽어 딕셔너리로 만들어 반환
 def read_class_names(class_label_path):
@@ -25,7 +19,17 @@ def read_class_names(class_label_path):
 
 class DataGenerator(object):
     def __init__(self,
-                 data_path,                 annot_path,                 class_label_path,                 load_images_to_ram=True,                 data_aug=True,                 input_size=416,                 anchor_per_scale=3,                 max_bbox_per_scale=100,                 batch_size=4,                 strides=STRIDES,                 anchors=ANCHORS):
+                 data_path,
+                 annot_path,
+                 class_label_path,
+                 load_images_to_ram=True,
+                 data_aug=True,
+                 input_size=416,
+                 anchor_per_scale=3,
+                 max_bbox_per_scale=100,
+                 batch_size=4,
+                 strides=STRIDES,
+                 anchors=ANCHORS):
         self.input_size = input_size
         self.annot_path = annot_path
         self.batch_size = batch_size
@@ -57,7 +61,7 @@ class DataGenerator(object):
         # 길이가0이 아닌 행들을 리스트로 만들어 놓음 
         # 파일명만 있는 행 제거 
         # (객체가 없는 이미지의 어노테이션 데이터임) 
-        lines = [line.strip() for line in data                 if len(line.strip().split()[1:]) != 0]
+        lines = [line.strip() for line in data if len(line.strip().split()[1:]) != 0]
 
         # 랜덤하게 섞음 
         np.random.shuffle(lines)
@@ -84,7 +88,7 @@ class DataGenerator(object):
 
             # [['C:\mnist_test\000009.jpg', 
             # [156,153,178,175,9', '278,294,300,316,0'], ''], ... ] 
-            annotations.append([image_path, annotation[1:],                                image])
+            annotations.append([image_path, annotation[1:], image])
 
         return annotations
 
@@ -98,7 +102,7 @@ class DataGenerator(object):
             image = cv2.imread(image_path) # 이미지를 불러옴 
 
         #  [[156,153,178,175,9], [278,294,300,316,0]] 
-        bboxes = np.array([list(map(int, box.split(',')))                           for box in annotation[1]])
+        bboxes = np.array([list(map(int, box.split(','))) for box in annotation[1]])
 
         # 이미지 증강 - 숫자, 문자는 좌/우 반전이 필요 없음 
         # 이미지를 변환하면 경계 상자도 같이 바꿔줘야 함 
@@ -107,14 +111,14 @@ class DataGenerator(object):
 #             image, bboxes = random_horizontal_flip( 
 #                 np.copy(image), np.copy(bboxes)) 
             # 자르기 
-            image, bboxes = random_crop(np.copy(image),                                         np.copy(bboxes))  
+            image, bboxes = random_crop(np.copy(image), np.copy(bboxes))
             # 이동 
-            image, bboxes = random_translate(np.copy(image),                                              np.copy(bboxes))
+            image, bboxes = random_translate(np.copy(image), np.copy(bboxes))
 
         # mAP=False이면 원본 이미지를 입력 이미지 크기로 변환 
         if not mAP:
             square_shape = [self.input_size, self.input_size]
-            image, bboxes = self.ip.resize_to_squre(                 np.copy(image), square_shape, np.copy(bboxes))
+            image, bboxes = self.ip.resize_to_squre( np.copy(image), square_shape, np.copy(bboxes))
 
         return image, bboxes
  
@@ -126,10 +130,10 @@ class DataGenerator(object):
         # output_size = 416/[8, 16, 32] = [52, 26, 13] -> N
         # anchor_per_scale = 3, num_classes = 10(MNIST일 경우)
         # 출력 레벨 수 만큼 (N,N,3,15) 모양의 라벨 배열 초기화
-        label = [np.zeros((self.output_sizes[i],                           self.output_sizes[i],                           self.anchor_per_scale,                           5 + self.num_classes))                  for i in range(OUTPUT_LEVELS)]
+        label = [np.zeros((self.output_sizes[i], self.output_sizes[i], self.anchor_per_scale, 5 + self.num_classes)) for i in range(OUTPUT_LEVELS)]
         # max_bbox_per_scale = 100 
         # 출력 레벨 수 만큼 (100,4) 모양 경계상자 배열 초기화 
-        bboxes_xywh = [np.zeros((self.max_bbox_per_scale, 4))                       for _ in range(OUTPUT_LEVELS)]
+        bboxes_xywh = [np.zeros((self.max_bbox_per_scale, 4)) for _ in range(OUTPUT_LEVELS)]
         # 출력 레벨 수 만큼 상자 수 배열 초기화 
         bbox_count = np.zeros((OUTPUT_LEVELS,))
 
@@ -154,7 +158,7 @@ class DataGenerator(object):
             smooth_onehot = (1-alpha)*onehot + alpha/K 
 
             # 상자 좌표를 상자 x,y,w,h로 변환 후 표준화 
-            bbox_xywh = np.concatenate(                [(bbox_coor[2:] + bbox_coor[:2]) * 0.5,                   bbox_coor[2:] - bbox_coor[:2]], axis=-1)
+            bbox_xywh = np.concatenate([(bbox_coor[2:] + bbox_coor[:2]) * 0.5, bbox_coor[2:] - bbox_coor[:2]], axis=-1)
             bbox_xywh_scaled = 1.0 * bbox_xywh[np.newaxis, :] / self.strides[:, np.newaxis]
 
             iou = []
@@ -162,38 +166,38 @@ class DataGenerator(object):
             for i in range(OUTPUT_LEVELS):  # range(3): 
                 # 앵커박스 
                 anchors_xywh = np.zeros((self.anchor_per_scale, 4))
-                anchors_xywh[:, 0:2] = np.floor(                      bbox_xywh_scaled[i, 0:2]).astype(np.int32)+0.5
+                anchors_xywh[:, 0:2] = np.floor(bbox_xywh_scaled[i, 0:2]).astype(np.int32)+0.5
                 anchors_xywh[:, 2:4] = self.anchors[i]
 
                 # 실제 박스와 앵커박스 IoU계산 
-                iou_scale = bbox_iou(                    bbox_xywh_scaled[i][np.newaxis, :],                    anchors_xywh)
+                iou_scale = bbox_iou(bbox_xywh_scaled[i][np.newaxis, :], anchors_xywh)
                 iou.append(iou_scale)
 
                 # IoU가 0.3 이상인 박스만 처리함 
                 iou_mask = iou_scale > 0.3 
                 if np.any(iou_mask):
-                    xi, yi = np.floor(                        bbox_xywh_scaled[i, 0:2]).astype(np.int32) 
+                    xi, yi = np.floor(bbox_xywh_scaled[i, 0:2]).astype(np.int32)
 
                     label[i][yi, xi, iou_mask, :] = 0 
                     label[i][yi, xi, iou_mask, 0:4] = bbox_xywh
                     label[i][yi, xi, iou_mask, 4:5] = 1.0 
                     label[i][yi, xi, iou_mask, 5:] = smooth_onehot
 
-                    bbox_ind = int(                        bbox_count[i]%self.max_bbox_per_scale)
+                    bbox_ind = int(bbox_count[i]%self.max_bbox_per_scale)
                     bboxes_xywh[i][bbox_ind, :4] = bbox_xywh
                     bbox_count[i] += 1 
                     exist_positive = True 
   
             if not exist_positive:
-                bst_anc_idx = np.argmax(np.array(iou).reshape(-1),                                           axis=-1)
+                bst_anc_idx = np.argmax(np.array(iou).reshape(-1), axis=-1)
                 best_detect = int(bst_anc_idx / self.anchor_per_scale)
                 best_anchor = int(bst_anc_idx % self.anchor_per_scale)
-                xi, yi = np.floor(                     bbox_xywh_scaled[best_detect,                                      0:2]).astype(np.int32)
+                xi, yi = np.floor(bbox_xywh_scaled[best_detect, 0:2]).astype(np.int32)
 
                 label[best_detect][yi, xi, best_anchor, :] = 0 
-                label[best_detect][yi, xi,                                   best_anchor, 0:4] = bbox_xywh 
-                label[best_detect][yi, xi,                                   best_anchor, 4:5] = 1.0 
-                label[best_detect][yi, xi,                                   best_anchor, 5:] = smooth_onehot 
+                label[best_detect][yi, xi, best_anchor, 0:4] = bbox_xywh
+                label[best_detect][yi, xi, best_anchor, 4:5] = 1.0
+                label[best_detect][yi, xi, best_anchor, 5:] = smooth_onehot
 
                 bbox_ind = int(bbox_count[best_detect] % self.max_bbox_per_scale)
                 bboxes_xywh[best_detect][bbox_ind, :4] = bbox_xywh 
@@ -201,7 +205,7 @@ class DataGenerator(object):
 
         label_sbbox, label_mbbox, label_lbbox = label
         sbboxes, mbboxes, lbboxes = bboxes_xywh
-        output_boxes = label_sbbox, label_mbbox, label_lbbox,                        sbboxes, mbboxes, lbboxes
+        output_boxes = label_sbbox, label_mbbox, label_lbbox, sbboxes, mbboxes, lbboxes
         return output_boxes 
 
     def __len__(self):
@@ -214,17 +218,17 @@ class DataGenerator(object):
     def __next__(self):
         with tf.device('/cpu:0'):
             # 배치 이미지를 갖는 배열 
-            batch_image = np.zeros(            (self.batch_size,             self.input_size,             self.input_size,             3), dtype=np.float32)
+            batch_image = np.zeros((self.batch_size, self.input_size, self.input_size, 3), dtype=np.float32)
 
-            # 배치 라벨(small, middle, large) 경계 상자 
-            batch_label_sbbox = np.zeros(            (self.batch_size,             self.output_sizes[0],              self.output_sizes[0],             self.anchor_per_scale,              5 + self.num_classes), dtype=np.float32)
-            batch_label_mbbox = np.zeros(            (self.batch_size,             self.output_sizes[1],              self.output_sizes[1],             self.anchor_per_scale,              5 + self.num_classes), dtype=np.float32)
-            batch_label_lbbox = np.zeros(            (self.batch_size,             self.output_sizes[2],              self.output_sizes[2],             self.anchor_per_scale,              5 + self.num_classes), dtype=np.float32)
+            # 배치 라벨(small, middle, large) 경계 상자
+            batch_label_sbbox = np.zeros((self.batch_size, self.output_sizes[0], self.output_sizes[0], self.anchor_per_scale, 5 + self.num_classes), dtype=np.float32)
+            batch_label_mbbox = np.zeros((self.batch_size, self.output_sizes[1], self.output_sizes[1], self.anchor_per_scale, 5 + self.num_classes), dtype=np.float32)
+            batch_label_lbbox = np.zeros((self.batch_size, self.output_sizes[2], self.output_sizes[2], self.anchor_per_scale, 5 + self.num_classes), dtype=np.float32)
 
-            # 배치 크기만큼 경계 상자를 저장할 변수 
-            batch_sbboxes = np.zeros(            (self.batch_size,              self.max_bbox_per_scale, 4), dtype=np.float32)
-            batch_mbboxes = np.zeros(            (self.batch_size,              self.max_bbox_per_scale, 4), dtype=np.float32)
-            batch_lbboxes = np.zeros(            (self.batch_size,             self.max_bbox_per_scale, 4), dtype=np.float32)
+            # 배치 크기만큼 경계 상자를 저장할 변수
+            batch_sbboxes = np.zeros((self.batch_size, self.max_bbox_per_scale, 4), dtype=np.float32)
+            batch_mbboxes = np.zeros((self.batch_size, self.max_bbox_per_scale, 4), dtype=np.float32)
+            batch_lbboxes = np.zeros((self.batch_size, self.max_bbox_per_scale, 4), dtype=np.float32)
 
             exceptions = False 
             num = 0 
