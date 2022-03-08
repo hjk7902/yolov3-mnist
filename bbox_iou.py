@@ -1,4 +1,6 @@
+import numpy as np
 import tensorflow as tf
+
 
 def bbox_iou(boxes1, boxes2):
     boxes1_area = boxes1[..., 2] * boxes1[..., 3]
@@ -17,6 +19,7 @@ def bbox_iou(boxes1, boxes2):
     union_area = boxes1_area + boxes2_area - inter_area
 
     return 1.0 * inter_area / union_area
+
 
 def bbox_giou(boxes1, boxes2):
     boxes1 = tf.concat([boxes1[..., :2] - boxes1[..., 2:] * 0.5,
@@ -50,6 +53,7 @@ def bbox_giou(boxes1, boxes2):
     giou = iou - 1.0 * (enclose_area - union_area) / enclose_area
 
     return giou
+
 
 def bbox_ciou(boxes1, boxes2):
     boxes1_coor = tf.concat([boxes1[..., :2] - boxes1[..., 2:] * 0.5,

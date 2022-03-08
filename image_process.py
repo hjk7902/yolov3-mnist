@@ -5,7 +5,7 @@ import cv2
 
 # 이미지를 정사각형 크기로 변환, 
 # 채워지는 화소 기본값은 value속성의 값으로 설정함
-def resize_to_square(image, target_size, gt_boxes=None, value=128):
+def resize_to_square(image, target_size, gt_boxes=None, value=128.0):
     ih, iw = target_size, target_size
     h, w, _ = image.shape
 
@@ -20,75 +20,68 @@ def resize_to_square(image, target_size, gt_boxes=None, value=128):
 
     if gt_boxes is None:
         return image_padded
-
     else:
         gt_boxes[:, [0, 2]] = gt_boxes[:, [0, 2]] * scale + dw
         gt_boxes[:, [1, 3]] = gt_boxes[:, [1, 3]] * scale + dh
         return image_padded, gt_boxes
 
 
-class ImagePreprocessor(object):
+# 좌/우 반전
+def random_horizontal_flip(self, image, bboxes, p=0.5):
+    if random.random() < p:
+        _, w, _ = image.shape
+        image = image[:, ::-1, :]
+        bboxes[:, [0, 2]] = w - bboxes[:, [2, 0]]
 
-    def __init__(self, p=0.5, image=None):
-        self.p = p
-        self.image = image
+    return image, bboxes
 
-    # 좌/우 반전
-    def random_horizontal_flip(self, image, bboxes):
-        if random.random() < self.p:
-            _, w, _ = image.shape
-            image = image[:, ::-1, :]
-            bboxes[:, [0, 2]] = w - bboxes[:, [2, 0]]
+# 자르기
+def random_crop(self, image, bboxes, p=0.5):
+    if random.random() < p:
+        h, w, _ = image.shape
+        max_bbox = np.concatenate(
+            [np.min(bboxes[:, 0:2], axis=0),
+             np.max(bboxes[:, 2:4], axis=0)], axis=-1)
 
-        return image, bboxes
+        max_l_trans = max_bbox[0]
+        max_u_trans = max_bbox[1]
+        max_r_trans = w - max_bbox[2]
+        max_d_trans = h - max_bbox[3]
 
-    # 자르기
-    def random_crop(self, image, bboxes):
-        if random.random() < self.p:
-            h, w, _ = image.shape
-            max_bbox = np.concatenate(
-                [np.min(bboxes[:, 0:2], axis=0),
-                 np.max(bboxes[:, 2:4], axis=0)], axis=-1)
+        crop_xmin = max(0,
+                        int(max_bbox[0] -
+                            random.uniform(0, max_l_trans)))
+        crop_ymin = max(0, int(max_bbox[1] - random.uniform(0, max_u_trans)))
+        crop_xmax = max(w, int(max_bbox[2] + random.uniform(0, max_r_trans)))
+        crop_ymax = max(h, int(max_bbox[3] + random.uniform(0, max_d_trans)))
 
-            max_l_trans = max_bbox[0]
-            max_u_trans = max_bbox[1]
-            max_r_trans = w - max_bbox[2]
-            max_d_trans = h - max_bbox[3]
+        image = image[crop_ymin: crop_ymax, crop_xmin: crop_xmax]
 
-            crop_xmin = max(0,
-                            int(max_bbox[0] -
-                                random.uniform(0, max_l_trans)))
-            crop_ymin = max(0, int(max_bbox[1] - random.uniform(0, max_u_trans)))
-            crop_xmax = max(w, int(max_bbox[2] + random.uniform(0, max_r_trans)))
-            crop_ymax = max(h, int(max_bbox[3] + random.uniform(0, max_d_trans)))
+        bboxes[:, [0, 2]] = bboxes[:, [0, 2]] - crop_xmin
+        bboxes[:, [1, 3]] = bboxes[:, [1, 3]] - crop_ymin
 
-            image = image[crop_ymin: crop_ymax, crop_xmin: crop_xmax]
+    return image, bboxes
 
-            bboxes[:, [0, 2]] = bboxes[:, [0, 2]] - crop_xmin
-            bboxes[:, [1, 3]] = bboxes[:, [1, 3]] - crop_ymin
+# 이동
+def random_translate(self, image, bboxes, p=0.5):
+    if random.random() < p:
+        h, w, _ = image.shape
+        max_bbox = np.concatenate([np.min(bboxes[:, 0:2], axis=0), np.max(bboxes[:, 2:4], axis=0)], axis=-1)
 
-        return image, bboxes
+        max_l_trans = max_bbox[0]
+        max_u_trans = max_bbox[1]
+        max_r_trans = w - max_bbox[2]
+        max_d_trans = h - max_bbox[3]
 
-    # 이동
-    def random_translate(self, image, bboxes):
-        if random.random() < self.p:
-            h, w, _ = image.shape
-            max_bbox = np.concatenate([np.min(bboxes[:, 0:2], axis=0), np.max(bboxes[:, 2:4], axis=0)], axis=-1)
+        tx = random.uniform(-(max_l_trans - 1), (max_r_trans - 1))
+        ty = random.uniform(-(max_u_trans - 1), (max_d_trans - 1))
 
-            max_l_trans = max_bbox[0]
-            max_u_trans = max_bbox[1]
-            max_r_trans = w - max_bbox[2]
-            max_d_trans = h - max_bbox[3]
+        M = np.array([[1, 0, tx], [0, 1, ty]])
+        image = cv2.warpAffine(image, M, (w, h))
 
-            tx = random.uniform(-(max_l_trans - 1), (max_r_trans - 1))
-            ty = random.uniform(-(max_u_trans - 1), (max_d_trans - 1))
+        bboxes[:, [0, 2]] = bboxes[:, [0, 2]] + tx
+        bboxes[:, [1, 3]] = bboxes[:, [1, 3]] + ty
 
-            M = np.array([[1, 0, tx], [0, 1, ty]])
-            image = cv2.warpAffine(image, M, (w, h))
-
-            bboxes[:, [0, 2]] = bboxes[:, [0, 2]] + tx
-            bboxes[:, [1, 3]] = bboxes[:, [1, 3]] + ty
-
-        return image, bboxes
+    return image, bboxes
 
 

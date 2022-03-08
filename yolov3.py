@@ -9,7 +9,6 @@ YOLO_ANCHORS  = [[[10,  13], [16,   30], [33,   23]],
                  [[116, 90], [156, 198], [373, 326]]]
 STRIDES       = np.array(YOLO_STRIDES)
 ANCHORS       = (np.array(YOLO_ANCHORS).T/STRIDES).T
-NUM_CLASS = 80
 
 
 class BatchNormalization(layers.BatchNormalization):
@@ -189,13 +188,14 @@ def decode(conv_output, num_class, i=0):
     return tf.concat([pred_xywh, pred_conf, pred_prob], axis=-1)
 
 
-def Create_YOLOv3(input_shape=(416,416,3), train_mode=False, num_class=NUM_CLASS):
+def Create_YOLOv3(num_class, input_shape=(416,416,3), train_mode=False):
     input_layer  = layers.Input(input_shape)
     conv_tensors = YOLOv3(input_layer, num_class)
     output_tensors = []
     for i, conv_tensor in enumerate(conv_tensors):
         pred_tensor = decode(conv_tensor, num_class, i)
-        if train_mode: output_tensors.append(conv_tensor)
+        if train_mode: 
+            output_tensors.append(conv_tensor)
         output_tensors.append(pred_tensor)
 
     model = tf.keras.Model(input_layer, output_tensors)

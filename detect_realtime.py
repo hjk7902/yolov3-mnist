@@ -10,7 +10,7 @@ yolo.load_weights("checkpoints/mnist_custom")
 weights = yolo.get_weights()
 class_names = read_class_names("mnist.names")
 
-cap = cv2.VideoCapture(0)
+cap = cv2.VideoCapture(1)
 if cap.isOpened():
     while True:
         yolo.set_weights(weights)

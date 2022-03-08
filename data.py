@@ -56,13 +56,11 @@ class DataGenerator(object):
         with open(self.annot_path, 'r') as f:
             # 파일에서 데이터를 불러와 라인별로 자름 
             data = f.read().splitlines()
-
-        # 공백으로 잘라 맨 앞의 파일경로제외하고  
-        # 길이가0이 아닌 행들을 리스트로 만들어 놓음 
-        # 파일명만 있는 행 제거 
-        # (객체가 없는 이미지의 어노테이션 데이터임) 
-        lines = [line.strip() for line in data if len(line.strip().split()[1:]) != 0]
-
+            # 공백으로 잘라 맨 앞의 파일경로제외하고  
+            # 길이가0이 아닌 행들을 리스트로 만들어 놓음 
+            # 파일명만 있는 행 제거 
+            # (객체가 없는 이미지의 어노테이션 데이터임) 
+            lines = [line.strip() for line in data if len(line.strip().split()[1:]) != 0]
         # 랜덤하게 섞음 
         np.random.shuffle(lines)
 
@@ -71,7 +69,15 @@ class DataGenerator(object):
             # 예: line=['C:\mnist_test\000009.jpg', 
             # 156,153,178,175,9', '278,294,300,316,0'] 
             annotation = line.split()
-            image_path = annotation[0]
+            image_path, index = "", 1
+            for i, one_line in enumerate(annotation):
+                if not one_line.replace(",","").isnumeric():
+                    if image_path != "": 
+                        image_path += " "
+                    image_path += one_line
+                else:
+                    index = i
+                    break
 
             # 어노테이션 이미지파일이 없으면 예외 발생시킴 
             if not os.path.exists(image_path):
@@ -88,7 +94,7 @@ class DataGenerator(object):
 
             # [['C:\mnist_test\000009.jpg', 
             # [156,153,178,175,9', '278,294,300,316,0'], ''], ... ] 
-            annotations.append([image_path, annotation[1:], image])
+            annotations.append([image_path, annotation[index:], image])
 
         return annotations
 
@@ -115,10 +121,11 @@ class DataGenerator(object):
             # 이동 
             image, bboxes = random_translate(np.copy(image), np.copy(bboxes))
 
-        # mAP=False이면 원본 이미지를 입력 이미지 크기로 변환 
-        if not mAP:
-            square_shape = [self.input_size, self.input_size]
-            image, bboxes = self.ip.resize_to_squre( np.copy(image), square_shape, np.copy(bboxes))
+        # mAP=True이면 image, bbox를 반환
+        if mAP==True:
+            return image, bboxes
+
+        image, bboxes = resize_to_square(np.copy(image), self.input_size, np.copy(bboxes))
 
         return image, bboxes
  
