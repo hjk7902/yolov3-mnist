@@ -23,8 +23,8 @@ if os.path.exists(LOGDIR): shutil.rmtree(LOGDIR)
 writer = tf.summary.create_file_writer(LOGDIR)
 validate_writer = tf.summary.create_file_writer(LOGDIR)
 
-trainset = DataGenerator(data_path="/mnist_train", annot_path="mnist_train.txt", class_label_path="mnist.names")
-testset = DataGenerator(data_path="/mnist_test", annot_path="mnist_test.txt", class_label_path="mnist.names")
+trainset = DataGenerator(data_path="data/mnist/train", annot_path="data/mnist/train.txt", class_label_path="data/mnist_names.txt")
+testset = DataGenerator(data_path="data/mnist/test", annot_path="data/mnist/test.txt", class_label_path="data/mnist_names.txt")
 steps_per_epoch = len(trainset)
 global_steps = tf.Variable(1, trainable=False, dtype=tf.int64)
 warmup_steps = WARMUP_EPOCHS * steps_per_epoch
