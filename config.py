@@ -23,5 +23,5 @@ TRAIN_DATA_PATH    = "data/"+DOMAIN+"/train"
 TRAIN_ANNOT_PATH   = "data/"+DOMAIN+"/train.txt"
 TEST_DATA_PATH     = "data/"+DOMAIN+"/test"
 TEST_ANNOT_PATH    = "data/"+DOMAIN+"/test.txt"
-CLASS_LABEL_PATH   = "data/"+DOMAIN+"_names.txt"
+CLASS_LABEL_PATH   = "data/"+DOMAIN+".names"
 
